@@ -17,7 +17,6 @@ import org.apache.commons.math3.transform.*;
 import java.nio.charset.StandardCharsets;
 */
 import java.util.ArrayList;
-
 import static java.lang.Math.*;
 
 public class Listentone {
@@ -28,23 +27,17 @@ public class Listentone {
     int START_HZ = 1024;
     int STEP_HZ = 256;
     int BITS = 4;
-
     int FEC_BYTES = 4;
-
     private int mAudioSource = MediaRecorder.AudioSource.MIC;
     private int mSampleRate = 44100;
     private int mChannelCount = AudioFormat.CHANNEL_IN_MONO;
     private int mAudioFormat = AudioFormat.ENCODING_PCM_16BIT;
     private float interval = 0.1f;
-
     private int mBufferSize = AudioRecord.getMinBufferSize(mSampleRate, mChannelCount, mAudioFormat);
-
     public AudioRecord mAudioRecord = null;
     int audioEncodig;
     boolean startFlag;
     FastFourierTransformer transform;
-
-
     public Listentone(){
         transform = new FastFourierTransformer(DftNormalization.STANDARD);
         startFlag = false;
@@ -52,7 +45,7 @@ public class Listentone {
         mAudioRecord.startRecording();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    //@RequiresApi(api = Build.VERSION_CODES.KITKAT)
     public void PreRequest(){
         //decode.py의 linsten_linux
         //Log.d("TAG", "Message"); TEST
@@ -95,7 +88,15 @@ public class Listentone {
             if (startFlag  && match(dom, HANDSHAKE_END_HZ)){
                 //Log.d("END_HZ","enter");
                 byte_stream = extract_packet(packet);
-                Log.d("Byte_TEST", "Byte:" + byte_stream.toString());
+                Log.d("Byte_TEST", "Byte:" + byte_stream.toString());   //십진수로 표현.
+                char[] decoded_Byte = new char[byte_stream.size()];
+                StringBuffer strbr = new StringBuffer();
+                for(int i = 0; i<byte_stream.size()-4;i++){
+                    decoded_Byte[i] = (char) byte_stream.get(i).intValue();
+                    strbr.append(decoded_Byte[i]);
+                    //Log.d("Char_TEST", "Char : " + decoded_Byte[i]);
+                }
+                Log.d("STR_TEST", "OUTPUT : " + strbr);
                 int byte_stream_size= byte_stream.size();
                 int[] received = new int[byte_stream_size];
 //                byte[] b = new byte[byte_stream_size-4];  //test
@@ -107,13 +108,16 @@ public class Listentone {
                 for(int i = 0; i< byte_stream_size; i++){
                     received[i] = byte_stream.get(i);
                 }
-                /*try {
+                /*
+                **RS CODE 작성하는 부분.
+                try {
                     //byte_stream = RSCodec(FEC_BYTES).decode(byte_stream)
                     //byte_stream = byte_stream.decode("utf-8")
                     //int temp = received.length;
                     //Log.d("received size", "rsize : "+ temp);
                     //GenericGF RS_PARAM = new GenericGF(0x20, temp, 1);
-                    ReedSolomonDecoder rsdecode = new ReedSolomonDecoder(GenericGF.DATA_MATRIX_FIELD_256);      //GenericGF값을 어떻게 넣어야 되는지 모르겠음. 유한체가 뭐야 하....
+                    //GenericGF값을 어떻게 넣어야 되는지 모르겠음. 유한체가 뭐야 하....
+                    ReedSolomonDecoder rsdecode = new ReedSolomonDecoder(GenericGF.DATA_MATRIX_FIELD_256);
                     rsdecode.decode(received, 4);
                     Log.d("Byte_TEST2", "Byte:" + byte_stream.toString());
 
@@ -149,7 +153,6 @@ public class Listentone {
         }
 
     }
-
     private double findFrequency(double[] toTransform) {   //이전 decode.py의 dominant 역할을 함
         int len = toTransform.length;
         double[] real = new double[len];
@@ -184,11 +187,9 @@ public class Listentone {
         //Log.d("TEST-peak_freq", "peak_freq : " + abs(peak_freq * mSampleRate));
         return abs(peak_freq * mSampleRate);
     }
-
     private boolean match(double freq1, double freq2){   //decode.py의 match def
         return abs(freq1-freq2) < 20;
     }
-
     private Double[] fftfreq(int n, double d){
         double val = 1.0 / (n * d);     //double val = 1.0 / (n * d)
         int[] results = new int[n];     //results = empty(n, int)
@@ -208,7 +209,6 @@ public class Listentone {
         }
         return return_Double_Array;
     }
-
     private int findPowerSize(int R_value){
         if(R_value == 0) return 0;
         int a = 1;
@@ -218,7 +218,6 @@ public class Listentone {
         Log.d("TEST-findPowerSize : ", "a : " + a + "," + R_value);
             return a;
     }
-
     private ArrayList<Integer> extract_packet(ArrayList<Double> freqs) { // extract_packet 그대로 들고 왔음.
         ArrayList<Integer> bit_chunks = new ArrayList<>();      //요놈이 bit_chunks
         ArrayList<Integer> bit_chunks2 = new ArrayList<>();      //요놈이 bit_chunks22
@@ -243,7 +242,6 @@ public class Listentone {
         return decode_bitchunks(BITS, bit_chunks2);
 
     }
-
     private ArrayList<Integer> decode_bitchunks(int chunk_bits, ArrayList<Integer> chunks) { // decode_bitchunks, 그대로 들고 왔어요
         ArrayList<Integer> out_bytes = new ArrayList<>();
         int next_read_chunk = 0;
